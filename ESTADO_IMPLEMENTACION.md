@@ -109,18 +109,19 @@
 ---
 
 ### 4. Subir Archivos (Recursos)
-**Estado**: Solo se puede poner URL, no subir archivos
+**Estado**: ✅ COMPLETADO - Funcionalidad completa implementada
 
-**Falta**:
-- ❌ Componente de upload de archivos
-- ❌ Subir PDFs, videos, imágenes
-- ❌ Almacenamiento en IndexedDB o GitHub
-- ❌ Vista previa de archivos antes de guardar
-- ❌ Validación de tipos de archivo
-- ❌ Límites de tamaño
-- ❌ Progreso de upload
+**Implementado**:
+- ✅ Componente de upload de archivos con drag & drop
+- ✅ Subir PDFs, videos, imágenes y documentos
+- ✅ Almacenamiento en IndexedDB (base64)
+- ✅ Vista previa de archivos antes de guardar (especialmente imágenes)
+- ✅ Validación de tipos de archivo
+- ✅ Límites de tamaño (50MB máximo)
+- ✅ Progreso de upload con barra visual
+- ✅ Vista previa de archivos subidos con información detallada
 
-**Impacto**: ALTO - Mejora significativamente la UX
+**Impacto**: ALTO - ✅ RESUELTO - Mejora significativamente la UX con drag & drop y previews
 
 ---
 
