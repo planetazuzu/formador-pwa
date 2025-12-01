@@ -58,6 +58,7 @@ export default function AdminResponses() {
 
   useEffect(() => {
     filterResponses();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [responses, filterStatus, searchQuery]);
 
   const loadResponses = async () => {

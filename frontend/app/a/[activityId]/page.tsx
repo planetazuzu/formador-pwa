@@ -13,11 +13,11 @@ function Card({ children, className = '' }: { children: React.ReactNode; classNa
   );
 }
 
-function Badge({ children, variant = 'primary' }: { children: React.ReactNode; variant?: 'primary' }) {
+function Badge({ children, variant = 'primary', className = '' }: { children: React.ReactNode; variant?: 'primary'; className?: string }) {
   return (
     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium ${
       variant === 'primary' ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400' : ''
-    }`}>
+    } ${className}`}>
       {children}
     </span>
   );
@@ -35,6 +35,7 @@ export default function ActivityPage({ params }: ActivityPageProps) {
 
   useEffect(() => {
     loadActivity();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.activityId]);
 
   const loadActivity = async () => {

@@ -434,7 +434,7 @@ export default function ActivityBuilder({ activity, onSave, onCancel }: Activity
                                       className="flex-1 px-3 py-1.5 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                       placeholder={`Opción ${optionIndex + 1}`}
                                     />
-                                    {question.options.length > 2 && (
+                                    {question.options && question.options.length > 2 && (
                                       <button
                                         onClick={() => removeOption(sectionIndex, questionIndex, optionIndex)}
                                         className="p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
