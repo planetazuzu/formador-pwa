@@ -59,6 +59,8 @@ export default function AdminResources() {
   const [previewResource, setPreviewResource] = useState<Resource | null>(null);
   const [showImportModal, setShowImportModal] = useState(false);
   const [importData, setImportData] = useState('');
+  const [dragActive, setDragActive] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState<{ name: string; size: number; type: string; preview?: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -119,6 +121,8 @@ export default function AdminResources() {
 
       setFormData({ title: '', type: 'pdf', url: '', description: '' });
       setEditingResource(null);
+      setUploadedFile(null);
+      setUploadProgress(0);
       setIsModalOpen(false);
     } catch (error) {
       console.error('Error guardando recurso:', error);
@@ -153,10 +157,7 @@ export default function AdminResources() {
     }
   };
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
+  const processFile = async (file: File) => {
     // Validar tipo de archivo
     const fileType = file.type;
     let resourceType = 'other';
@@ -173,8 +174,30 @@ export default function AdminResources() {
       return;
     }
 
+    // Validar tipos permitidos
+    const allowedTypes = [
+      'application/pdf',
+      'video/mp4', 'video/webm', 'video/ogg',
+      'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
+      'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    ];
+    
+    if (!allowedTypes.some(type => fileType.includes(type)) && fileType !== '') {
+      alert('Tipo de archivo no permitido. Por favor, sube PDFs, videos, imágenes o documentos.');
+      return;
+    }
+
     setUploading(true);
     setUploadProgress(0);
+
+    // Guardar información del archivo para preview
+    const fileInfo = {
+      name: file.name,
+      size: file.size,
+      type: fileType,
+    };
+    setUploadedFile(fileInfo);
 
     try {
       // Convertir archivo a base64
@@ -190,14 +213,23 @@ export default function AdminResources() {
       reader.onloadend = async () => {
         try {
           const base64Data = reader.result as string;
-          // Crear data URL para usar como URL
-          const dataUrl = base64Data;
+          
+          // Crear preview para imágenes
+          let preview: string | undefined;
+          if (fileType.startsWith('image/')) {
+            preview = base64Data;
+          }
+
+          setUploadedFile({
+            ...fileInfo,
+            preview,
+          });
 
           // Actualizar formulario con los datos del archivo
           setFormData({
             title: file.name.replace(/\.[^/.]+$/, ''), // Nombre sin extensión
             type: resourceType,
-            url: dataUrl,
+            url: base64Data,
             description: `Archivo subido: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`,
           });
 
@@ -208,6 +240,7 @@ export default function AdminResources() {
         } catch (error) {
           console.error('Error procesando archivo:', error);
           alert('Error al procesar el archivo.');
+          setUploadedFile(null);
         } finally {
           setUploading(false);
         }
@@ -217,6 +250,7 @@ export default function AdminResources() {
         alert('Error al leer el archivo.');
         setUploading(false);
         setUploadProgress(0);
+        setUploadedFile(null);
       };
 
       reader.readAsDataURL(file);
@@ -225,6 +259,33 @@ export default function AdminResources() {
       alert('Error al subir el archivo.');
       setUploading(false);
       setUploadProgress(0);
+      setUploadedFile(null);
+    }
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    await processFile(file);
+  };
+
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActive(true);
+    } else if (e.type === 'dragleave') {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      await processFile(e.dataTransfer.files[0]);
     }
   };
 
@@ -500,58 +561,128 @@ export default function AdminResources() {
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   URL o subir archivo *
                 </label>
-                <div className="space-y-2">
+                <div className="space-y-3">
+                  {/* Zona de drag & drop */}
+                  <div
+                    onDragEnter={handleDrag}
+                    onDragLeave={handleDrag}
+                    onDragOver={handleDrag}
+                    onDrop={handleDrop}
+                    className={`border-2 border-dashed rounded-xl p-6 transition-colors ${
+                      dragActive
+                        ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20'
+                        : 'border-gray-300 dark:border-gray-600 hover:border-indigo-400 dark:hover:border-indigo-500'
+                    }`}
+                  >
+                    <div className="text-center">
+                      <Upload className={`w-12 h-12 mx-auto mb-3 ${dragActive ? 'text-indigo-500' : 'text-gray-400'}`} />
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                        Arrastra y suelta un archivo aquí, o
+                      </p>
+                      <div className="flex items-center justify-center gap-2">
+                        <input
+                          type="file"
+                          ref={fileInputRef}
+                          onChange={handleFileUpload}
+                          accept=".pdf,.mp4,.webm,.ogg,.jpg,.jpeg,.png,.gif,.webp,.doc,.docx,.xls,.xlsx"
+                          className="hidden"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={uploading}
+                          className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <Upload className="w-4 h-4" />
+                          {uploading ? 'Subiendo...' : 'Seleccionar archivo'}
+                        </button>
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                        PDF, Video, Imagen o Documento (máx. 50MB)
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Vista previa del archivo subido */}
+                  {uploadedFile && (
+                    <div className="border border-green-200 dark:border-green-800 rounded-lg p-4 bg-green-50 dark:bg-green-900/20">
+                      <div className="flex items-start gap-3">
+                        {uploadedFile.preview ? (
+                          <img
+                            src={uploadedFile.preview}
+                            alt="Preview"
+                            className="w-16 h-16 object-cover rounded-lg"
+                          />
+                        ) : (
+                          <div className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center">
+                            <File className="w-8 h-8 text-gray-400" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                            {uploadedFile.name}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            {(uploadedFile.size / 1024 / 1024).toFixed(2)} MB
+                          </p>
+                          <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                            ✓ Archivo listo para guardar
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setUploadedFile(null);
+                            setFormData({ ...formData, url: '' });
+                          }}
+                          className="p-1 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                        >
+                          <X className="w-4 h-4 text-red-500" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Barra de progreso */}
+                  {uploading && (
+                    <div className="space-y-2">
+                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                        <div
+                          className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${uploadProgress}%` }}
+                        />
+                      </div>
+                      <p className="text-xs text-center text-gray-600 dark:text-gray-400">
+                        Subiendo... {uploadProgress}%
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Input de URL (alternativa) */}
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-gray-300 dark:border-gray-600"></div>
+                    </div>
+                    <div className="relative flex justify-center text-sm">
+                      <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+                        O ingresa una URL
+                      </span>
+                    </div>
+                  </div>
                   <input
                     type="url"
-                    required={!uploading && !formData.url.startsWith('data:')}
-                    value={formData.url.startsWith('data:') ? 'Archivo subido ✓' : formData.url}
+                    required={!uploading && !formData.url.startsWith('data:') && !uploadedFile}
+                    value={formData.url.startsWith('data:') ? '' : formData.url}
                     onChange={(e) => {
                       if (!e.target.value.startsWith('data:')) {
                         setFormData({ ...formData, url: e.target.value });
+                        setUploadedFile(null);
                       }
                     }}
-                    disabled={formData.url.startsWith('data:')}
+                    disabled={formData.url.startsWith('data:') || !!uploadedFile}
                     className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                    placeholder="https://ejemplo.com/recurso.pdf o sube un archivo"
+                    placeholder="https://ejemplo.com/recurso.pdf"
                   />
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      onChange={handleFileUpload}
-                      accept=".pdf,.mp4,.webm,.jpg,.jpeg,.png,.gif,.doc,.docx,.xls,.xlsx"
-                      className="hidden"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={uploading}
-                      className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <Upload className="w-4 h-4" />
-                      {uploading ? 'Subiendo...' : 'Subir archivo'}
-                    </button>
-                    {formData.url.startsWith('data:') && (
-                      <button
-                        type="button"
-                        onClick={() => setFormData({ ...formData, url: '' })}
-                        className="px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-                  {uploading && (
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                      <div
-                        className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${uploadProgress}%` }}
-                      />
-                    </div>
-                  )}
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Puede ser una URL externa o sube un archivo (máx. 50MB)
-                  </p>
                 </div>
               </div>
 
@@ -575,6 +706,8 @@ export default function AdminResources() {
                     setIsModalOpen(false);
                     setEditingResource(null);
                     setFormData({ title: '', type: 'pdf', url: '', description: '' });
+                    setUploadedFile(null);
+                    setUploadProgress(0);
                   }}
                   className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                 >
