@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Plus, FileText, Upload, X, Edit, Trash2, ExternalLink, Video, Image, File, Link as LinkIcon } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Plus, FileText, Upload, X, Edit, Trash2, ExternalLink, Video, Image, File, Link as LinkIcon, Eye, Download } from 'lucide-react';
 import { db, Resource } from '@/lib/db';
 import BackButton from '@/components/ui/BackButton';
+import PdfViewer from '@/components/PdfViewer';
+import VideoPlayer from '@/components/VideoPlayer';
 
 // Componentes simples inline
 function Button({ children, size = 'md', variant = 'primary', className = '', ...props }: { children: React.ReactNode; size?: 'sm' | 'md' | 'lg'; variant?: 'primary' | 'outline'; className?: string; [key: string]: any }) {
@@ -52,6 +54,12 @@ export default function AdminResources() {
   const [loading, setLoading] = useState(false);
   const [loadingResources, setLoadingResources] = useState(true);
   const [editingResource, setEditingResource] = useState<Resource | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [previewResource, setPreviewResource] = useState<Resource | null>(null);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importData, setImportData] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadResources();
@@ -145,6 +153,139 @@ export default function AdminResources() {
     }
   };
 
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validar tipo de archivo
+    const fileType = file.type;
+    let resourceType = 'other';
+    
+    if (fileType.includes('pdf')) resourceType = 'pdf';
+    else if (fileType.startsWith('video/')) resourceType = 'video';
+    else if (fileType.startsWith('image/')) resourceType = 'image';
+    else if (fileType.includes('document') || fileType.includes('word') || fileType.includes('excel')) resourceType = 'document';
+
+    // Validar tamaño (máximo 50MB)
+    const maxSize = 50 * 1024 * 1024; // 50MB
+    if (file.size > maxSize) {
+      alert('El archivo es demasiado grande. El tamaño máximo es 50MB.');
+      return;
+    }
+
+    setUploading(true);
+    setUploadProgress(0);
+
+    try {
+      // Convertir archivo a base64
+      const reader = new FileReader();
+      
+      reader.onprogress = (e) => {
+        if (e.lengthComputable) {
+          const progress = Math.round((e.loaded / e.total) * 100);
+          setUploadProgress(progress);
+        }
+      };
+
+      reader.onloadend = async () => {
+        try {
+          const base64Data = reader.result as string;
+          // Crear data URL para usar como URL
+          const dataUrl = base64Data;
+
+          // Actualizar formulario con los datos del archivo
+          setFormData({
+            title: file.name.replace(/\.[^/.]+$/, ''), // Nombre sin extensión
+            type: resourceType,
+            url: dataUrl,
+            description: `Archivo subido: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`,
+          });
+
+          setUploadProgress(100);
+          setTimeout(() => {
+            setUploadProgress(0);
+          }, 1000);
+        } catch (error) {
+          console.error('Error procesando archivo:', error);
+          alert('Error al procesar el archivo.');
+        } finally {
+          setUploading(false);
+        }
+      };
+
+      reader.onerror = () => {
+        alert('Error al leer el archivo.');
+        setUploading(false);
+        setUploadProgress(0);
+      };
+
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('Error subiendo archivo:', error);
+      alert('Error al subir el archivo.');
+      setUploading(false);
+      setUploadProgress(0);
+    }
+  };
+
+  const handlePreview = (resource: Resource) => {
+    setPreviewResource(resource);
+  };
+
+  const handleImport = async () => {
+    try {
+      const data = JSON.parse(importData);
+      const resourcesToImport = Array.isArray(data) ? data : [data];
+      
+      let imported = 0;
+      let errors = 0;
+
+      for (const resourceData of resourcesToImport) {
+        try {
+          const resourceId = `resource-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+          const now = Date.now();
+
+          const resource: Resource = {
+            resourceId,
+            title: resourceData.title || 'Recurso sin título',
+            type: resourceData.type || 'other',
+            url: resourceData.url || '',
+            metadata: resourceData.metadata || {},
+            createdAt: resourceData.createdAt || now,
+            updatedAt: now,
+          };
+
+          await db.resources.add(resource);
+          imported++;
+        } catch (error) {
+          console.error('Error importando recurso:', error);
+          errors++;
+        }
+      }
+
+      alert(`Importación completada: ${imported} recursos importados${errors > 0 ? `, ${errors} errores` : ''}`);
+      setShowImportModal(false);
+      setImportData('');
+      loadResources();
+    } catch (error) {
+      alert('Error al importar. Verifica que el JSON sea válido.');
+      console.error('Error importando:', error);
+    }
+  };
+
+  const handleExport = () => {
+    const dataStr = JSON.stringify(resources, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `recursos-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   const getTypeIcon = (type: string) => {
     const typeInfo = RESOURCE_TYPES.find(t => t.value === type) || RESOURCE_TYPES[RESOURCE_TYPES.length - 1];
     const Icon = typeInfo.icon;
@@ -171,7 +312,16 @@ export default function AdminResources() {
             variant="outline"
             size="sm"
             className="gap-2"
-            onClick={() => alert('Función de importar próximamente')}
+            onClick={handleExport}
+          >
+            <Download className="w-4 h-4" />
+            Exportar
+          </Button>
+          <Button 
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={() => setShowImportModal(true)}
           >
             <Upload className="w-4 h-4" />
             Importar
@@ -242,6 +392,13 @@ export default function AdminResources() {
                   {new Date(resource.createdAt).toLocaleDateString('es-ES')}
                 </span>
                 <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handlePreview(resource)}
+                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                    title="Vista previa"
+                  >
+                    <Eye className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                  </button>
                   <button
                     onClick={() => handleEdit(resource)}
                     className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
@@ -341,19 +498,61 @@ export default function AdminResources() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  URL o ruta del recurso *
+                  URL o subir archivo *
                 </label>
-                <input
-                  type="url"
-                  required
-                  value={formData.url}
-                  onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-                  className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  placeholder="https://ejemplo.com/recurso.pdf o /ruta/local"
-                />
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                  Puede ser una URL externa o una ruta local al archivo
-                </p>
+                <div className="space-y-2">
+                  <input
+                    type="url"
+                    required={!uploading && !formData.url.startsWith('data:')}
+                    value={formData.url.startsWith('data:') ? 'Archivo subido ✓' : formData.url}
+                    onChange={(e) => {
+                      if (!e.target.value.startsWith('data:')) {
+                        setFormData({ ...formData, url: e.target.value });
+                      }
+                    }}
+                    disabled={formData.url.startsWith('data:')}
+                    className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    placeholder="https://ejemplo.com/recurso.pdf o sube un archivo"
+                  />
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileUpload}
+                      accept=".pdf,.mp4,.webm,.jpg,.jpeg,.png,.gif,.doc,.docx,.xls,.xlsx"
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploading}
+                      className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Upload className="w-4 h-4" />
+                      {uploading ? 'Subiendo...' : 'Subir archivo'}
+                    </button>
+                    {formData.url.startsWith('data:') && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, url: '' })}
+                        className="px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                  {uploading && (
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                      <div
+                        className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${uploadProgress}%` }}
+                      />
+                    </div>
+                  )}
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Puede ser una URL externa o sube un archivo (máx. 50MB)
+                  </p>
+                </div>
               </div>
 
               <div>
@@ -390,6 +589,128 @@ export default function AdminResources() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de vista previa */}
+      {previewResource && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-6xl w-full max-h-[95vh] overflow-hidden flex flex-col">
+            <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                  {previewResource.title}
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  {RESOURCE_TYPES.find(t => t.value === previewResource.type)?.label || previewResource.type}
+                </p>
+              </div>
+              <button
+                onClick={() => setPreviewResource(null)}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6">
+              {previewResource.type === 'pdf' && (
+                <div className="w-full" style={{ height: '70vh' }}>
+                  <iframe
+                    src={previewResource.url}
+                    className="w-full h-full border border-gray-200 dark:border-gray-700 rounded-lg"
+                    title="PDF Viewer"
+                  />
+                </div>
+              )}
+              {previewResource.type === 'video' && (
+                <VideoPlayer url={previewResource.url} title={previewResource.title} />
+              )}
+              {previewResource.type === 'image' && (
+                <div className="flex justify-center">
+                  <img
+                    src={previewResource.url}
+                    alt={previewResource.title}
+                    className="max-w-full h-auto rounded-lg"
+                  />
+                </div>
+              )}
+              {(previewResource.type === 'link' || previewResource.type === 'document' || previewResource.type === 'other') && (
+                <div className="text-center py-12">
+                  <ExternalLink className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600 dark:text-gray-400 mb-4">
+                    Este tipo de recurso no tiene vista previa integrada
+                  </p>
+                  <a
+                    href={previewResource.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    Abrir recurso
+                  </a>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de importar */}
+      {showImportModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                Importar Recursos
+              </h2>
+              <button
+                onClick={() => {
+                  setShowImportModal(false);
+                  setImportData('');
+                }}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4 flex-1 overflow-y-auto">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  JSON de recursos
+                </label>
+                <textarea
+                  value={importData}
+                  onChange={(e) => setImportData(e.target.value)}
+                  rows={12}
+                  className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none font-mono text-sm"
+                  placeholder='[{"title": "Recurso 1", "type": "pdf", "url": "https://..."}, ...]'
+                />
+                <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                  Pega aquí el JSON con los recursos a importar. Debe ser un array de objetos con: title, type, url (opcional: metadata, description)
+                </p>
+              </div>
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowImportModal(false);
+                    setImportData('');
+                  }}
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleImport}
+                  disabled={!importData.trim()}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Importar
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

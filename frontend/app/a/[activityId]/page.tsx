@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { BookOpen, Clock, ArrowLeft } from 'lucide-react';
 import { db, Activity } from '@/lib/db';
 import Link from 'next/link';
+import ActivityPlayer from '@/components/ActivityPlayer';
 
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
@@ -100,8 +101,6 @@ export default function ActivityPage({ params }: ActivityPageProps) {
     );
   }
 
-  const content = activity.content as any;
-
   return (
     <main className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="max-w-4xl mx-auto px-6 py-12">
@@ -110,47 +109,13 @@ export default function ActivityPage({ params }: ActivityPageProps) {
           Volver al inicio
         </Link>
 
-        <div className="mb-8">
-          <Badge variant="primary" className="mb-4">Actividad Pública</Badge>
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-            {activity.title}
-          </h1>
-          {content?.description && (
-            <p className="text-lg text-gray-600 dark:text-gray-400 mb-4">
-              {content.description}
-            </p>
-          )}
-          <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-            <Clock className="w-4 h-4" />
-            <span>Creada el {new Date(activity.createdAt).toLocaleDateString('es-ES')}</span>
-          </div>
-        </div>
-
-        <Card>
-          <div className="prose dark:prose-invert max-w-none">
-            {content?.sections && content.sections.length > 0 ? (
-              content.sections.map((section: any, index: number) => (
-                <div key={index} className="mb-6">
-                  {section.type === 'text' && (
-                    <div className="whitespace-pre-wrap text-gray-900 dark:text-gray-100">
-                      {section.content}
-                    </div>
-                  )}
-                </div>
-              ))
-            ) : content?.content ? (
-              <div className="whitespace-pre-wrap text-gray-900 dark:text-gray-100">
-                {content.content}
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-gray-600 dark:text-gray-400">
-                  Esta actividad aún no tiene contenido.
-                </p>
-              </div>
-            )}
-          </div>
-        </Card>
+        <ActivityPlayer
+          activityId={params.activityId}
+          onComplete={(response) => {
+            // Redirigir o mostrar mensaje de éxito
+            console.log('Respuesta completada:', response);
+          }}
+        />
       </div>
     </main>
   );
