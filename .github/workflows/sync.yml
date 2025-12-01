@@ -1,0 +1,50 @@
+name: Sincronización Automática
+
+on:
+  schedule:
+    # Ejecuta cada hora
+    - cron: '0 * * * *'
+  workflow_dispatch: # Permite ejecución manual
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Descargar datos del repositorio
+        run: |
+          echo "Descargando datos de /data/ del repositorio..."
+          # Aquí se implementaría la lógica de descarga
+          # Por ejemplo, usando la API de GitHub para obtener archivos de /data/
+
+      - name: Comprobar cambios
+        run: |
+          echo "Comprobando cambios en los datos..."
+          # Lógica para comparar versiones y detectar cambios
+          # Por ejemplo, usando la API de GitHub para obtener archivos de /data/
+
+      - name: Actualizar si es necesario
+        run: |
+          echo "Actualizando datos si hay cambios..."
+          # Lógica para actualizar los datos si se detectan cambios
+
+      - name: Commit cambios
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .
+          # Solo hacer commit si hay cambios
+          if git diff --staged --quiet; then
+            echo "No hay cambios para commitear"
+          else
+            git commit -m "Auto-sync: Actualización de datos"
+            git push
+          fi
+

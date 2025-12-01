@@ -1,0 +1,16 @@
+{
+  "name": "formador-pwa",
+  "version": "1.0.0",
+  "description": "Formador PWA - Aplicación de formación con frontend Next.js y backend autoalojado en GitHub",
+  "private": true,
+  "scripts": {
+    "dev": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "start": "cd frontend && npm start",
+    "lint": "cd frontend && npm run lint"
+  },
+  "keywords": ["pwa", "nextjs", "github-api", "formacion"],
+  "author": "",
+  "license": "MIT"
+}
+

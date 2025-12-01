@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Resource Schema",
+  "description": "Esquema para recursos de formación",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Identificador único del recurso"
+    },
+    "title": {
+      "type": "string",
+      "description": "Título del recurso"
+    },
+    "type": {
+      "type": "string",
+      "enum": ["pdf", "video", "link", "document", "other"],
+      "description": "Tipo de recurso"
+    },
+    "url": {
+      "type": "string",
+      "format": "uri",
+      "description": "URL del recurso"
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Metadatos adicionales del recurso"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha de creación"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha de última actualización"
+    }
+  },
+  "required": ["id", "title", "type"]
+}
+

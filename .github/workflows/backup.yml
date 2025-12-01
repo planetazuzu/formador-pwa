@@ -1,0 +1,45 @@
+name: Backup Diario
+
+on:
+  schedule:
+    # Ejecuta diariamente a las 2:00 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch: # Permite ejecución manual
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Crear backup del repositorio
+        run: |
+          echo "Creando backup del repositorio..."
+          BACKUP_DATE=$(date +%Y%m%d)
+          BACKUP_DIR="backups"
+          
+          # Crear directorio de backups si no existe
+          mkdir -p $BACKUP_DIR
+          
+          # Crear archivo de backup con la fecha
+          tar -czf "$BACKUP_DIR/backup-$BACKUP_DATE.tar.gz" \
+            --exclude='node_modules' \
+            --exclude='.next' \
+            --exclude='.git' \
+            .
+          
+          echo "Backup creado: $BACKUP_DIR/backup-$BACKUP_DATE.tar.gz"
+
+      - name: Subir backup como artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: backup-${{ github.run_number }}
+          path: backups/*.tar.gz
+          retention-days: 30
+
+      - name: Limpiar backups antiguos
+        run: |
+          echo "Limpiando backups antiguos (más de 30 días)..."
+          find backups -name "backup-*.tar.gz" -mtime +30 -delete || true
+

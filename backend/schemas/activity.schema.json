@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Activity Schema",
+  "description": "Esquema para actividades de formación",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Identificador único de la actividad"
+    },
+    "title": {
+      "type": "string",
+      "description": "Título de la actividad"
+    },
+    "content": {
+      "type": "object",
+      "description": "Contenido de la actividad"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha de creación"
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha de última actualización"
+    }
+  },
+  "required": ["id", "title"]
+}
+
