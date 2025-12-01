@@ -125,16 +125,19 @@
 ---
 
 ### 5. SessionBuilder (Constructor de Sesiones)
-**Estado**: Componente vacío con mensaje "pendiente de implementar"
+**Estado**: ✅ COMPLETADO - Funcionalidad completa implementada
 
-**Falta**:
-- ❌ Seleccionar actividades existentes
-- ❌ Reordenar actividades (drag & drop)
-- ❌ Añadir/eliminar actividades de sesión
-- ❌ Guardar sesiones en GitHub/IndexedDB
-- ❌ Vista previa de sesión
+**Implementado**:
+- ✅ Seleccionar actividades existentes (búsqueda y selección visual)
+- ✅ Reordenar actividades (drag & drop funcional)
+- ✅ Añadir/eliminar actividades de sesión
+- ✅ Guardar sesiones en IndexedDB
+- ✅ Vista previa de sesión
+- ✅ Editar sesiones existentes
+- ✅ Eliminar sesiones
+- ✅ Ver detalles completos de sesiones
 
-**Impacto**: MEDIO - Útil para organizar contenido
+**Impacto**: MEDIO - ✅ RESUELTO - Permite organizar contenido de forma eficiente
 
 ---
 
