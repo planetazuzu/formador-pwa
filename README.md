@@ -486,6 +486,17 @@ Las contribuciones son bienvenidas. Por favor:
 
 Si solo quieres probar rápidamente, consulta [QUICK_START.md](./QUICK_START.md) para una guía de inicio rápido.
 
+## 📖 Guía de Funcionamiento
+
+Para entender cómo usar todas las funcionalidades de la aplicación, consulta la [Guía de Funcionamiento Completa](./GUIA_FUNCIONAMIENTO.md) que incluye:
+
+- Cómo usar cada sección del panel de administración
+- Gestión de recursos, actividades y sesiones
+- Creación y uso de enlaces públicos
+- Funcionamiento del backend y sincronización
+- Solución de problemas
+- Preguntas frecuentes
+
 ---
 
 ## 📊 Estado del Proyecto
