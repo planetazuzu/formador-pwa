@@ -5,7 +5,7 @@ import { Plus, BookOpen, Sparkles, X, Edit, Trash2, Eye, Play } from 'lucide-rea
 import { db, Activity } from '@/lib/db';
 import Link from 'next/link';
 import BackButton from '@/components/ui/BackButton';
-import MarkdownEditor from '@/components/MarkdownEditor';
+import ActivityBuilder from '@/components/ActivityBuilder';
 
 // Componentes simples inline
 function Button({ children, size = 'md', variant = 'primary', className = '', ...props }: { children: React.ReactNode; size?: 'sm' | 'md' | 'lg'; variant?: 'primary' | 'outline'; className?: string; [key: string]: any }) {
@@ -36,12 +36,6 @@ function Card({ children, className = '' }: { children: React.ReactNode; classNa
 export default function AdminActivities() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activities, setActivities] = useState<Activity[]>([]);
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    content: '',
-  });
-  const [loading, setLoading] = useState(false);
   const [loadingActivities, setLoadingActivities] = useState(true);
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
 
@@ -67,66 +61,8 @@ export default function AdminActivities() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      const activityId = `activity-${Date.now()}`;
-      const now = Date.now();
-
-      // Estructura básica de contenido de actividad
-      const activityContent = {
-        description: formData.description || undefined,
-        sections: formData.content ? [
-          {
-            type: 'text',
-            content: formData.content,
-          }
-        ] : [],
-      };
-
-      const activityData: Activity = {
-        activityId,
-        title: formData.title,
-        content: activityContent,
-        createdAt: now,
-        updatedAt: now,
-      };
-
-      if (editingActivity && editingActivity.id) {
-        // Editar actividad existente
-        await db.activities.update(editingActivity.id, {
-          ...activityData,
-          activityId: editingActivity.activityId,
-          updatedAt: now,
-        });
-        setActivities(prev => prev.map(a => a.id === editingActivity.id ? { ...activityData, id: editingActivity.id, activityId: editingActivity.activityId } : a));
-      } else {
-        // Crear nueva actividad
-        await db.activities.add(activityData);
-        setActivities(prev => [...prev, activityData]);
-      }
-
-      setFormData({ title: '', description: '', content: '' });
-      setEditingActivity(null);
-      setIsModalOpen(false);
-    } catch (error) {
-      console.error('Error guardando actividad:', error);
-      alert('Error al guardar la actividad. Por favor, intenta de nuevo.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleEdit = (activity: Activity) => {
     setEditingActivity(activity);
-    const content = activity.content as any;
-    setFormData({
-      title: activity.title,
-      description: content?.description || '',
-      content: content?.sections?.[0]?.content || '',
-    });
     setIsModalOpen(true);
   };
 
@@ -164,7 +100,6 @@ export default function AdminActivities() {
           className="gap-2"
           onClick={() => {
             setEditingActivity(null);
-            setFormData({ title: '', description: '', content: '' });
             setIsModalOpen(true);
           }}
         >
@@ -254,7 +189,6 @@ export default function AdminActivities() {
             <Button 
               onClick={() => {
                 setEditingActivity(null);
-                setFormData({ title: '', description: '', content: '' });
                 setIsModalOpen(true);
               }}
               className="gap-2"
@@ -269,8 +203,8 @@ export default function AdminActivities() {
       {/* Modal para crear/editar actividad */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-5xl w-full max-h-[95vh] overflow-hidden flex flex-col">
-            <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-6xl w-full max-h-[95vh] overflow-hidden flex flex-col">
+            <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between z-10">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                 {editingActivity ? 'Editar Actividad' : 'Crear Nueva Actividad'}
               </h2>
@@ -278,7 +212,6 @@ export default function AdminActivities() {
                 onClick={() => {
                   setIsModalOpen(false);
                   setEditingActivity(null);
-                  setFormData({ title: '', description: '', content: '' });
                 }}
                 className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
               >
@@ -286,67 +219,20 @@ export default function AdminActivities() {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 space-y-6 flex-1 overflow-y-auto">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Título de la actividad *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  placeholder="Ej: Introducción a React"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Descripción
-                </label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={3}
-                  className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
-                  placeholder="Descripción de la actividad..."
-                />
-              </div>
-
-              <div>
-                <div className="border border-gray-300 dark:border-gray-600 rounded-xl overflow-hidden bg-white dark:bg-gray-800">
-                  <MarkdownEditor
-                    value={formData.content}
-                    onChange={(value) => setFormData({ ...formData, content: value })}
-                    placeholder="Escribe el contenido de la actividad aquí usando Markdown. Ejemplos: **negrita**, *cursiva*, `código`, # Título, - Lista"
-                    label="Contenido de la actividad"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsModalOpen(false);
-                    setEditingActivity(null);
-                    setFormData({ title: '', description: '', content: '' });
-                  }}
-                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  {loading ? 'Guardando...' : editingActivity ? 'Guardar Cambios' : 'Crear Actividad'}
-                </button>
-              </div>
-            </form>
+            <div className="flex-1 overflow-y-auto p-6">
+              <ActivityBuilder
+                activity={editingActivity}
+                onSave={(savedActivity) => {
+                  loadActivities();
+                  setIsModalOpen(false);
+                  setEditingActivity(null);
+                }}
+                onCancel={() => {
+                  setIsModalOpen(false);
+                  setEditingActivity(null);
+                }}
+              />
+            </div>
           </div>
         </div>
       )}
