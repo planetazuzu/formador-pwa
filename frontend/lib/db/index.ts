@@ -55,6 +55,21 @@ export interface Response {
   updatedAt: number;
 }
 
+export interface Token {
+  id?: number;
+  tokenId: string;
+  token: string; // Token único generado
+  activityId?: string; // ID de actividad asociada (opcional)
+  activityTitle?: string; // Título de actividad para referencia
+  expiresAt?: number; // Fecha de expiración (timestamp)
+  maxUses?: number; // Máximo número de usos
+  uses: number; // Número de veces usado
+  isActive: boolean; // Si el token está activo o revocado
+  description?: string; // Descripción opcional
+  createdAt: number;
+  updatedAt: number;
+}
+
 // Base de datos Dexie
 class FormadorDatabase extends Dexie {
   activities!: Table<Activity>;
@@ -62,6 +77,7 @@ class FormadorDatabase extends Dexie {
   sessions!: Table<Session>;
   links!: Table<Link>;
   responses!: Table<Response>;
+  tokens!: Table<Token>;
 
   constructor() {
     super('FormadorDB');
@@ -71,6 +87,7 @@ class FormadorDatabase extends Dexie {
       sessions: '++id, sessionId, title, createdAt, updatedAt',
       links: '++id, linkId, title, createdAt, updatedAt',
       responses: '++id, responseId, activityId, studentId, status, createdAt, updatedAt',
+      tokens: '++id, tokenId, token, activityId, isActive, createdAt, updatedAt',
     });
   }
 }

@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Link as LinkIcon, ExternalLink, X, Copy, Calendar } from 'lucide-react';
+import { Plus, Link as LinkIcon, ExternalLink, X, Copy, Calendar, Key } from 'lucide-react';
 import { db, Link } from '@/lib/db';
 import BackButton from '@/components/ui/BackButton';
+import TokenGenerator from '@/components/TokenGenerator';
 
 // Componentes simples inline
 function Button({ children, size = 'md', className = '', ...props }: { children: React.ReactNode; size?: 'sm' | 'md' | 'lg'; className?: string; [key: string]: any }) {
@@ -28,6 +29,7 @@ function Card({ children, className = '' }: { children: React.ReactNode; classNa
 }
 
 export default function AdminLinks() {
+  const [activeTab, setActiveTab] = useState<'links' | 'tokens'>('links');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [links, setLinks] = useState<Link[]>([]);
   const [formData, setFormData] = useState({
@@ -111,23 +113,60 @@ export default function AdminLinks() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-            Enlaces
+            Enlaces y Tokens
           </h1>
           <p className="mt-1.5 text-gray-600 dark:text-gray-400">
-            Gestiona enlaces compartidos y accesos rápidos
+            Gestiona enlaces compartidos y tokens de acceso
           </p>
         </div>
-        <button 
-          onClick={() => setIsModalOpen(true)}
-          className="inline-flex items-center justify-center rounded-xl font-medium transition-all duration-200 bg-indigo-600 text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 px-3 py-1.5 text-sm gap-2"
+        {activeTab === 'links' && (
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="inline-flex items-center justify-center rounded-xl font-medium transition-all duration-200 bg-indigo-600 text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 px-3 py-1.5 text-sm gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Nuevo enlace
+          </button>
+        )}
+      </div>
+
+      {/* Tabs */}
+      <div className="flex items-center gap-2 mb-6 border-b border-gray-200 dark:border-gray-700">
+        <button
+          onClick={() => setActiveTab('links')}
+          className={`px-4 py-2 font-medium transition-colors border-b-2 ${
+            activeTab === 'links'
+              ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
+              : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+          }`}
         >
-          <Plus className="w-4 h-4" />
-          Nuevo enlace
+          <div className="flex items-center gap-2">
+            <LinkIcon className="w-4 h-4" />
+            Enlaces
+          </div>
+        </button>
+        <button
+          onClick={() => setActiveTab('tokens')}
+          className={`px-4 py-2 font-medium transition-colors border-b-2 ${
+            activeTab === 'tokens'
+              ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
+              : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <Key className="w-4 h-4" />
+            Tokens
+          </div>
         </button>
       </div>
 
-      {/* Lista de enlaces */}
-      {loadingLinks ? (
+      {/* Contenido según tab activo */}
+      {activeTab === 'tokens' ? (
+        <TokenGenerator />
+      ) : (
+        <>
+          {/* Lista de enlaces */}
+          {loadingLinks ? (
         <Card>
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
@@ -299,6 +338,8 @@ export default function AdminLinks() {
             </form>
           </div>
         </div>
+      )}
+        </>
       )}
     </div>
   );
