@@ -70,6 +70,18 @@ export interface Token {
   updatedAt: number;
 }
 
+export interface SyncHistory {
+  id?: number;
+  syncId: string;
+  type: 'push' | 'pull' | 'sync';
+  status: 'success' | 'error' | 'partial';
+  pushed: number;
+  pulled: number;
+  conflicts: number;
+  errors: string[];
+  timestamp: number;
+}
+
 // Base de datos Dexie
 class FormadorDatabase extends Dexie {
   activities!: Table<Activity>;
@@ -78,6 +90,7 @@ class FormadorDatabase extends Dexie {
   links!: Table<Link>;
   responses!: Table<Response>;
   tokens!: Table<Token>;
+  syncHistory!: Table<SyncHistory>;
 
   constructor() {
     super('FormadorDB');
@@ -96,6 +109,16 @@ class FormadorDatabase extends Dexie {
       links: '++id, linkId, title, createdAt, updatedAt',
       responses: '++id, responseId, activityId, studentId, status, createdAt, updatedAt',
       tokens: '++id, tokenId, token, activityId, isActive, createdAt, updatedAt',
+    });
+    // Versión 3: Añadir tabla de historial de sincronización
+    this.version(3).stores({
+      activities: '++id, activityId, title, createdAt, updatedAt',
+      resources: '++id, resourceId, title, type, createdAt, updatedAt',
+      sessions: '++id, sessionId, title, createdAt, updatedAt',
+      links: '++id, linkId, title, createdAt, updatedAt',
+      responses: '++id, responseId, activityId, studentId, status, createdAt, updatedAt',
+      tokens: '++id, tokenId, token, activityId, isActive, createdAt, updatedAt',
+      syncHistory: '++id, syncId, type, status, timestamp',
     });
   }
 }
