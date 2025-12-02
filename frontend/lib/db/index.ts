@@ -46,6 +46,18 @@ export interface Link {
   updatedAt: number;
 }
 
+export interface Comment {
+  id?: number;
+  commentId: string;
+  entityType: 'activity' | 'response'; // Tipo de entidad comentada
+  entityId: string; // ID de la actividad o respuesta
+  author: string; // Nombre del autor
+  authorId?: string; // ID del autor (opcional)
+  content: string; // Contenido del comentario
+  createdAt: number;
+  updatedAt: number;
+}
+
 export interface Response {
   id?: number;
   responseId: string;
@@ -56,6 +68,7 @@ export interface Response {
   content: any; // Respuestas del estudiante
   score?: number; // Calificación opcional
   status: 'pending' | 'completed' | 'graded';
+  comments?: Comment[]; // Comentarios en la respuesta
   createdAt: number;
   updatedAt: number;
 }
@@ -111,6 +124,7 @@ class FormadorDatabase extends Dexie {
   tokens!: Table<Token>;
   syncHistory!: Table<SyncHistory>;
   config!: Table<AppConfig>;
+  comments!: Table<Comment>;
 
   constructor() {
     super('FormadorDB');
@@ -150,6 +164,18 @@ class FormadorDatabase extends Dexie {
       tokens: '++id, tokenId, token, activityId, isActive, createdAt, updatedAt',
       syncHistory: '++id, syncId, type, status, timestamp',
       config: '++id, configId, createdAt, updatedAt',
+    });
+    // Versión 5: Añadir tabla de comentarios
+    this.version(5).stores({
+      activities: '++id, activityId, title, createdAt, updatedAt',
+      resources: '++id, resourceId, title, type, createdAt, updatedAt',
+      sessions: '++id, sessionId, title, createdAt, updatedAt',
+      links: '++id, linkId, title, createdAt, updatedAt',
+      responses: '++id, responseId, activityId, studentId, status, createdAt, updatedAt',
+      tokens: '++id, tokenId, token, activityId, isActive, createdAt, updatedAt',
+      syncHistory: '++id, syncId, type, status, timestamp',
+      config: '++id, configId, createdAt, updatedAt',
+      comments: '++id, commentId, entityType, entityId, createdAt, updatedAt',
     });
   }
 }
