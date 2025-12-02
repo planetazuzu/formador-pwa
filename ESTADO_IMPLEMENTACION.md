@@ -259,15 +259,18 @@
 ---
 
 ### 13. Validación de Esquemas JSON
-**Estado**: Esquemas existen pero no se validan
+**Estado**: ✅ COMPLETADO - Sistema completo de validación implementado
 
-**Falta**:
-- ❌ Validar datos contra esquemas JSON
-- ❌ Mensajes de error descriptivos
-- ❌ Validación en tiempo real
-- ❌ Sanitización de datos
+**Implementado**:
+- ✅ Validar datos contra esquemas JSON (usando AJV)
+- ✅ Mensajes de error descriptivos y legibles
+- ✅ Validación antes de guardar en todos los componentes principales
+- ✅ Sanitización de datos (trim, eliminación de undefined, validación de tipos)
+- ✅ Componente ValidationErrors para mostrar errores en UI
+- ✅ Integrado en ActivityBuilder, SessionBuilder, páginas de recursos y sesiones
+- ✅ Validación de campos requeridos, tipos, enums, formatos
 
-**Impacto**: MEDIO - Mejora robustez
+**Impacto**: MEDIO - ✅ RESUELTO - Mejora significativamente la robustez y calidad de datos
 
 ---
 
