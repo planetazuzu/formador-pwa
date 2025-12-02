@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import ThemeProvider from "@/components/ThemeProvider";
+import PWAProvider from "@/components/pwa/PWAProvider";
 
 export const metadata: Metadata = {
   title: "Formador PWA",
@@ -44,28 +45,20 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html: `
+              // Preparar para beforeinstallprompt
+              let deferredPrompt;
+              window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                window.dispatchEvent(new CustomEvent('pwa-install-available'));
+              });
+              
+              // Limpiar service workers antiguos al iniciar
               if ('serviceWorker' in navigator) {
-                // Limpiar service workers antiguos primero
-                navigator.serviceWorker.getRegistrations().then((registrations) => {
-                  for (let registration of registrations) {
-                    registration.unregister();
-                  }
-                  // Limpiar cachés
-                  caches.keys().then((cacheNames) => {
-                    cacheNames.forEach((cacheName) => {
-                      caches.delete(cacheName);
-                    });
-                  });
-                }).then(() => {
-                  // Registrar nuevo service worker después de limpiar
-                  window.addEventListener('load', () => {
-                    navigator.serviceWorker.register('/service-worker.js')
-                      .then((registration) => {
-                        console.log('SW registered:', registration);
-                      })
-                      .catch((error) => {
-                        console.log('SW registration failed:', error);
-                      });
+                window.addEventListener('load', () => {
+                  navigator.serviceWorker.getRegistrations().then((registrations) => {
+                    // No limpiar automáticamente, dejar que el nuevo SW maneje la limpieza
+                    console.log('[PWA] Found', registrations.length, 'service worker registrations');
                   });
                 });
               }
@@ -74,7 +67,10 @@ export default function RootLayout({
         />
       </head>
       <body className="font-sans">
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          <PWAProvider />
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

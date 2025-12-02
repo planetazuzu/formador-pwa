@@ -1,12 +1,13 @@
 {
   "name": "Formador PWA",
   "short_name": "Formador",
-  "description": "Aplicación de formación progresiva",
+  "description": "Aplicación de formación progresiva con modo offline",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#000000",
+  "theme_color": "#6366f1",
   "orientation": "portrait-primary",
+  "scope": "/",
   "icons": [
     {
       "src": "/icon-192.png",
@@ -19,6 +20,23 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    }
+  ],
+  "categories": ["education", "productivity"],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "Acceso rápido al panel de administración",
+      "url": "/admin/dashboard",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Actividades",
+      "short_name": "Actividades",
+      "description": "Gestionar actividades",
+      "url": "/admin/activities",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }
