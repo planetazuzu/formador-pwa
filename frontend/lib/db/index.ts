@@ -87,6 +87,14 @@ class FormadorDatabase extends Dexie {
       sessions: '++id, sessionId, title, createdAt, updatedAt',
       links: '++id, linkId, title, createdAt, updatedAt',
       responses: '++id, responseId, activityId, studentId, status, createdAt, updatedAt',
+    });
+    // Versión 2: Añadir tabla de tokens
+    this.version(2).stores({
+      activities: '++id, activityId, title, createdAt, updatedAt',
+      resources: '++id, resourceId, title, type, createdAt, updatedAt',
+      sessions: '++id, sessionId, title, createdAt, updatedAt',
+      links: '++id, linkId, title, createdAt, updatedAt',
+      responses: '++id, responseId, activityId, studentId, status, createdAt, updatedAt',
       tokens: '++id, tokenId, token, activityId, isActive, createdAt, updatedAt',
     });
   }

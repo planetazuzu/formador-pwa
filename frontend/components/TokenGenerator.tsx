@@ -1,9 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Copy, CheckCircle2, X, Calendar, Users, Key, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, Copy, CheckCircle2, X, Calendar, Users, Key, Eye, EyeOff } from 'lucide-react';
 import { db, Token, Activity } from '@/lib/db';
-import { generateId } from '@/lib/utils';
 
 interface TokenGeneratorProps {
   activityId?: string;
