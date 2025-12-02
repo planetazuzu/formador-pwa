@@ -82,6 +82,20 @@ export interface SyncHistory {
   timestamp: number;
 }
 
+export interface AppConfig {
+  id?: number;
+  configId: string;
+  appName: string;
+  appDescription?: string;
+  github?: {
+    owner?: string;
+    repo?: string;
+    token?: string; // Se guarda encriptado o en localStorage por seguridad
+  };
+  createdAt: number;
+  updatedAt: number;
+}
+
 // Base de datos Dexie
 class FormadorDatabase extends Dexie {
   activities!: Table<Activity>;
@@ -91,6 +105,7 @@ class FormadorDatabase extends Dexie {
   responses!: Table<Response>;
   tokens!: Table<Token>;
   syncHistory!: Table<SyncHistory>;
+  config!: Table<AppConfig>;
 
   constructor() {
     super('FormadorDB');
@@ -119,6 +134,17 @@ class FormadorDatabase extends Dexie {
       responses: '++id, responseId, activityId, studentId, status, createdAt, updatedAt',
       tokens: '++id, tokenId, token, activityId, isActive, createdAt, updatedAt',
       syncHistory: '++id, syncId, type, status, timestamp',
+    });
+    // Versión 4: Añadir tabla de configuración
+    this.version(4).stores({
+      activities: '++id, activityId, title, createdAt, updatedAt',
+      resources: '++id, resourceId, title, type, createdAt, updatedAt',
+      sessions: '++id, sessionId, title, createdAt, updatedAt',
+      links: '++id, linkId, title, createdAt, updatedAt',
+      responses: '++id, responseId, activityId, studentId, status, createdAt, updatedAt',
+      tokens: '++id, tokenId, token, activityId, isActive, createdAt, updatedAt',
+      syncHistory: '++id, syncId, type, status, timestamp',
+      config: '++id, configId, createdAt, updatedAt',
     });
   }
 }
