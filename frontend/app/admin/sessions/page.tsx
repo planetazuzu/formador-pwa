@@ -65,31 +65,41 @@ export default function AdminSessions() {
 
     try {
       const now = Date.now();
+      const sessionId = editingSession?.sessionId || `session-${Date.now()}`;
+
+      const sessionDataToValidate: Session = {
+        sessionId,
+        title: sessionData.title,
+        activities: sessionData.activities,
+        createdAt: editingSession?.createdAt || now,
+        updatedAt: now,
+      };
+
+      // Validar datos
+      const { validateAndSanitize } = await import('@/lib/validation/schemas');
+      const validation = validateAndSanitize(sessionDataToValidate, 'session');
+
+      if (!validation.valid) {
+        alert(`Errores de validación:\n${validation.errors.map(e => `- ${e.field}: ${e.message}`).join('\n')}`);
+        setLoading(false);
+        return;
+      }
+
+      const sanitized = validation.sanitized!;
 
       if (editingSession) {
         // Editar sesión existente
         const updatedSession: Session = {
           ...editingSession,
-          title: sessionData.title,
-          activities: sessionData.activities,
-          updatedAt: now,
+          ...sanitized,
         };
 
         await db.sessions.update(editingSession.id!, updatedSession);
         setSessions(prev => prev.map(s => s.id === editingSession.id ? updatedSession : s));
       } else {
         // Crear nueva sesión
-        const sessionId = `session-${Date.now()}`;
-        const newSession: Session = {
-          sessionId,
-          title: sessionData.title,
-          activities: sessionData.activities,
-          createdAt: now,
-          updatedAt: now,
-        };
-
-        await db.sessions.add(newSession);
-        setSessions(prev => [...prev, newSession]);
+        await db.sessions.add(sanitized);
+        setSessions(prev => [...prev, sanitized]);
       }
 
       setIsModalOpen(false);

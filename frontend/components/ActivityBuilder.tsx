@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { Plus, Trash2, GripVertical, Eye, Save, X, FileText, Video, Link as LinkIcon, Image } from 'lucide-react';
 import { db, Activity, Resource } from '@/lib/db';
 import { generateId } from '@/lib/utils';
+import { validateAndSanitize, ValidationError } from '@/lib/validation/schemas';
+import ValidationErrors from '@/components/ui/ValidationErrors';
 
 // Tipos de preguntas
 type QuestionType = 'multiple-choice' | 'text' | 'true-false' | 'code' | 'essay';
@@ -43,6 +45,7 @@ export default function ActivityBuilder({ activity, onSave, onCancel }: Activity
   const [showPreview, setShowPreview] = useState(false);
   const [loading, setLoading] = useState(false);
   const [activeSectionIndex, setActiveSectionIndex] = useState<number | null>(null);
+  const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
 
   // Cargar recursos disponibles
   useEffect(() => {
@@ -147,37 +150,45 @@ export default function ActivityBuilder({ activity, onSave, onCancel }: Activity
   };
 
   const handleSave = async () => {
-    if (!title.trim()) {
-      alert('El título es obligatorio');
+    // Limpiar errores previos
+    setValidationErrors([]);
+
+    const activityId = activity?.activityId || `activity-${Date.now()}`;
+    const now = Date.now();
+
+    const activityData: Activity = {
+      activityId,
+      title: title.trim(),
+      content: {
+        description: description.trim() || undefined,
+        sections: sections,
+      },
+      createdAt: activity?.createdAt || now,
+      updatedAt: now,
+    };
+
+    // Validar y sanitizar datos
+    const validation = validateAndSanitize(activityData, 'activity');
+
+    if (!validation.valid) {
+      setValidationErrors(validation.errors);
       return;
     }
 
     setLoading(true);
     try {
-      const activityId = activity?.activityId || `activity-${Date.now()}`;
-      const now = Date.now();
-
-      const activityData: Activity = {
-        activityId,
-        title: title.trim(),
-        content: {
-          description: description.trim() || undefined,
-          sections: sections,
-        },
-        createdAt: activity?.createdAt || now,
-        updatedAt: now,
-      };
+      const sanitizedData = validation.sanitized!;
 
       if (activity?.id) {
         // Actualizar actividad existente
-        await db.activities.update(activity.id, activityData);
+        await db.activities.update(activity.id, sanitizedData);
       } else {
         // Crear nueva actividad
-        await db.activities.add(activityData);
+        await db.activities.add(sanitizedData);
       }
 
       if (onSave) {
-        onSave({ ...activityData, id: activity?.id });
+        onSave({ ...sanitizedData, id: activity?.id });
       }
     } catch (error) {
       console.error('Error guardando actividad:', error);
@@ -239,6 +250,14 @@ export default function ActivityBuilder({ activity, onSave, onCancel }: Activity
 
       {!showPreview ? (
         <div className="space-y-6">
+          {/* Errores de validación */}
+          {validationErrors.length > 0 && (
+            <ValidationErrors
+              errors={validationErrors}
+              onDismiss={() => setValidationErrors([])}
+            />
+          )}
+
           {/* Información básica */}
           <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">

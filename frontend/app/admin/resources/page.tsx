@@ -90,7 +90,7 @@ export default function AdminResources() {
     setLoading(true);
 
     try {
-      const resourceId = `resource-${Date.now()}`;
+      const resourceId = editingResource?.resourceId || `resource-${Date.now()}`;
       const now = Date.now();
 
       const resourceData: Resource = {
@@ -100,23 +100,40 @@ export default function AdminResources() {
         url: formData.url,
         metadata: {
           description: formData.description || undefined,
+          ...(uploadedFile && {
+            fileName: uploadedFile.name,
+            fileSize: uploadedFile.size,
+            fileType: uploadedFile.type,
+            preview: uploadedFile.preview,
+          }),
         },
-        createdAt: now,
+        createdAt: editingResource?.createdAt || now,
         updatedAt: now,
       };
+
+      // Validar datos
+      const { validateAndSanitize } = await import('@/lib/validation/schemas');
+      const validation = validateAndSanitize(resourceData, 'resource');
+
+      if (!validation.valid) {
+        alert(`Errores de validación:\n${validation.errors.map(e => `- ${e.field}: ${e.message}`).join('\n')}`);
+        setLoading(false);
+        return;
+      }
+
+      const sanitized = validation.sanitized!;
 
       if (editingResource && editingResource.id) {
         // Editar recurso existente
         await db.resources.update(editingResource.id, {
-          ...resourceData,
+          ...sanitized,
           resourceId: editingResource.resourceId,
-          updatedAt: now,
         });
-        setResources(prev => prev.map(r => r.id === editingResource.id ? { ...resourceData, id: editingResource.id, resourceId: editingResource.resourceId } : r));
+        setResources(prev => prev.map(r => r.id === editingResource.id ? { ...sanitized, id: editingResource.id, resourceId: editingResource.resourceId } : r));
       } else {
         // Crear nuevo recurso
-        await db.resources.add(resourceData);
-        setResources(prev => [...prev, resourceData]);
+        await db.resources.add(sanitized);
+        setResources(prev => [...prev, sanitized]);
       }
 
       setFormData({ title: '', type: 'pdf', url: '', description: '' });

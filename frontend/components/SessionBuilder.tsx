@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { Plus, X, GripVertical, Eye, Trash2, Search, BookOpen, CheckCircle2 } from 'lucide-react';
 import { db, Activity } from '@/lib/db';
 import { generateId } from '@/lib/utils';
+import { validateAndSanitize, ValidationError } from '@/lib/validation/schemas';
+import ValidationErrors from '@/components/ui/ValidationErrors';
 
 interface SessionBuilderProps {
   initialTitle?: string;
@@ -26,6 +28,7 @@ export default function SessionBuilder({
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
 
   useEffect(() => {
     loadActivities();
@@ -98,15 +101,30 @@ export default function SessionBuilder({
   };
 
   const handleSave = () => {
-    if (!title.trim()) {
-      alert('Por favor, ingresa un título para la sesión');
+    // Limpiar errores previos
+    setValidationErrors([]);
+
+    // Preparar datos para validación
+    const sessionData = {
+      sessionId: `session-${Date.now()}`,
+      title: title.trim(),
+      activities: selectedActivities,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+
+    // Validar datos
+    const validation = validateAndSanitize(sessionData, 'session');
+
+    if (!validation.valid) {
+      setValidationErrors(validation.errors);
       return;
     }
 
     if (onSave) {
       onSave({
-        title: title.trim(),
-        activities: selectedActivities,
+        title: validation.sanitized!.title,
+        activities: validation.sanitized!.activities,
       });
     }
   };
@@ -117,6 +135,14 @@ export default function SessionBuilder({
 
   return (
     <div className="space-y-6">
+      {/* Errores de validación */}
+      {validationErrors.length > 0 && (
+        <ValidationErrors
+          errors={validationErrors}
+          onDismiss={() => setValidationErrors([])}
+        />
+      )}
+
       {/* Título */}
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
