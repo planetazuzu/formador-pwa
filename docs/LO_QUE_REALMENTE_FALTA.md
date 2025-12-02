@@ -151,7 +151,7 @@ Este documento refleja el estado REAL del código después de una revisión exha
 ### 🟢 BAJA PRIORIDAD (Mejoras Futuras)
 
 #### 6. Funcionalidades Adicionales
-**Estado**: ⚠️ PARCIALMENTE IMPLEMENTADO
+**Estado**: ✅ MAYORMENTE IMPLEMENTADO
 
 **Implementado**:
 - ✅ **Búsqueda global** - Buscar en todas las actividades, recursos, sesiones con debounce
@@ -159,16 +159,20 @@ Este documento refleja el estado REAL del código después de una revisión exha
 - ✅ **Campo tags** - Añadido a Activity, Resource y Session en la base de datos
 - ✅ **Barra de búsqueda** - Integrada en AdminSidebar con resultados en tiempo real
 - ✅ **Búsqueda inteligente** - Ordenamiento por relevancia, sugerencias
+- ✅ **Sistema de comentarios** - Comentarios completos en actividades y respuestas (Comments component)
+- ✅ **Tabla Comment** - Añadida a la base de datos (versión 5) con soporte para actividades y respuestas
+- ✅ **Exportación avanzada** - Exportar a CSV/Excel con formato, JSON estructurado
+- ✅ **Funciones de exportación** - Para actividades, respuestas, sesiones y reportes de analytics
+- ✅ **Plantillas de actividades** - Biblioteca con 5 plantillas predefinidas (Quiz, Encuesta, Código, Ensayo, Examen)
+- ✅ **TemplateSelector** - Componente para seleccionar y usar plantillas
 
-**Pendiente**:
-- ❌ **Comentarios** - Comentarios en actividades y respuestas
-- ❌ **Colaboración** - Múltiples profesores editando simultáneamente
-- ❌ **Analytics avanzado** - Métricas detalladas, reportes personalizados
-- ❌ **Exportación avanzada** - Exportar a PDF, Word, Excel con formato
+**Pendiente (requieren infraestructura adicional)**:
+- ❌ **Colaboración en tiempo real** - Requiere WebSockets y backend para edición simultánea
+- ❌ **Analytics avanzado con gráficos** - Requiere librerías de gráficos (Chart.js, Recharts)
+- ❌ **Exportación a PDF real** - Requiere jsPDF o similar (estructura lista)
 - ❌ **Importación masiva** - Importar múltiples actividades desde CSV/Excel
-- ❌ **Plantillas de actividades** - Biblioteca de plantillas predefinidas
-- ❌ **Gamificación** - Puntos, badges, leaderboards
-- ❌ **Integraciones** - Integración con Google Classroom, Moodle, etc.
+- ❌ **Gamificación** - Puntos, badges, leaderboards (requiere sistema de puntos)
+- ❌ **Integraciones externas** - Integración con Google Classroom, Moodle, etc. (requiere APIs externas)
 
 ---
 
