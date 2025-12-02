@@ -1,7 +1,10 @@
 'use client';
 
-import { Settings, Save, Database } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Settings, Save, Database, RefreshCw } from 'lucide-react';
 import BackButton from '@/components/ui/BackButton';
+import GitHubSync from '@/components/GitHubSync';
+import { SyncConfig } from '@/lib/sync/github';
 
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
@@ -11,7 +14,7 @@ function Card({ children, className = '' }: { children: React.ReactNode; classNa
   );
 }
 
-function Input({ label, placeholder, defaultValue, type = 'text' }: { label: string; placeholder?: string; defaultValue?: string; type?: string }) {
+function Input({ label, placeholder, defaultValue, type = 'text', onChange }: { label: string; placeholder?: string; defaultValue?: string; type?: string; onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void }) {
   return (
     <div className="w-full">
       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
@@ -21,6 +24,7 @@ function Input({ label, placeholder, defaultValue, type = 'text' }: { label: str
         type={type}
         defaultValue={defaultValue}
         placeholder={placeholder}
+        onChange={onChange}
         className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
       />
     </div>
@@ -36,6 +40,39 @@ function Button({ children, className = '', ...props }: { children: React.ReactN
 }
 
 export default function AdminSettings() {
+  const [githubConfig, setGithubConfig] = useState<SyncConfig>({
+    token: '',
+    owner: '',
+    repo: '',
+  });
+  const [configLoaded, setConfigLoaded] = useState(false);
+
+  useEffect(() => {
+    // Cargar configuración de GitHub desde variables de entorno o localStorage
+    const loadConfig = () => {
+      const owner = process.env.NEXT_PUBLIC_GITHUB_OWNER || '';
+      const repo = process.env.NEXT_PUBLIC_GITHUB_REPO || '';
+      // El token no debe estar en variables públicas, se debe ingresar manualmente
+      const savedToken = typeof window !== 'undefined' ? localStorage.getItem('github_token') || '' : '';
+      
+      setGithubConfig({
+        token: savedToken,
+        owner,
+        repo,
+      });
+      setConfigLoaded(true);
+    };
+
+    loadConfig();
+  }, []);
+
+  const handleSaveConfig = () => {
+    if (githubConfig.token && typeof window !== 'undefined') {
+      localStorage.setItem('github_token', githubConfig.token);
+    }
+    alert('Configuración guardada. Ahora puedes usar la sincronización.');
+  };
+
   return (
     <div>
       {/* Header */}
@@ -111,18 +148,30 @@ export default function AdminSettings() {
             <Input
               label="Owner"
               placeholder="tu-usuario"
+              defaultValue={githubConfig.owner}
+              onChange={(e) => setGithubConfig({ ...githubConfig, owner: e.target.value })}
             />
             <Input
               label="Repositorio"
               placeholder="formador-pwa"
+              defaultValue={githubConfig.repo}
+              onChange={(e) => setGithubConfig({ ...githubConfig, repo: e.target.value })}
             />
             <Input
               label="Token de acceso"
               type="password"
               placeholder="ghp_..."
+              defaultValue={githubConfig.token}
+              onChange={(e) => setGithubConfig({ ...githubConfig, token: e.target.value })}
             />
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+              <p className="text-sm text-blue-800 dark:text-blue-300">
+                <strong>Nota:</strong> El token se guarda localmente en tu navegador. Para mayor seguridad, 
+                considera usar variables de entorno en producción.
+              </p>
+            </div>
             <div className="flex justify-end">
-              <Button onClick={() => alert('Función de guardar próximamente')}>
+              <Button onClick={handleSaveConfig}>
                 <Save className="w-4 h-4" />
                 Guardar configuración
               </Button>
@@ -130,6 +179,21 @@ export default function AdminSettings() {
           </div>
         </Card>
       </div>
+
+      {/* Sincronización GitHub */}
+      {configLoaded && githubConfig.token && githubConfig.owner && githubConfig.repo && (
+        <div className="mb-8">
+          <div className="mb-4">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-1">
+              Sincronización con GitHub
+            </h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Sincroniza tus datos entre el almacenamiento local y GitHub
+            </p>
+          </div>
+          <GitHubSync config={githubConfig} />
+        </div>
+      )}
 
       {/* Apariencia */}
       <div className="mb-8">
