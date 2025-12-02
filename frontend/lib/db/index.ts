@@ -6,6 +6,7 @@ export interface Activity {
   activityId: string;
   title: string;
   content: any;
+  tags?: string[]; // Etiquetas/categorías
   createdAt: number;
   updatedAt: number;
 }
@@ -17,6 +18,8 @@ export interface Resource {
   type: string;
   url: string;
   metadata: any;
+  tags?: string[]; // Etiquetas/categorías
+  description?: string;
   createdAt: number;
   updatedAt: number;
 }
@@ -26,6 +29,8 @@ export interface Session {
   sessionId: string;
   title: string;
   activities: string[];
+  tags?: string[]; // Etiquetas/categorías
+  description?: string;
   createdAt: number;
   updatedAt: number;
 }

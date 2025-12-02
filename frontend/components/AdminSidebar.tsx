@@ -10,9 +10,11 @@ import {
   Link as LinkIcon, 
   Users, 
   Settings,
-  GraduationCap
+  GraduationCap,
+  Search
 } from 'lucide-react';
 import DarkModeToggle from './ui/DarkModeToggle';
+import SearchBar from './SearchBar';
 
 export default function AdminSidebar() {
   const pathname = usePathname();
@@ -39,6 +41,11 @@ export default function AdminSidebar() {
             Formador
           </span>
         </Link>
+      </div>
+
+      {/* Search Bar */}
+      <div className="p-4 border-b border-border dark:border-gray-800">
+        <SearchBar placeholder="Buscar actividades, recursos..." />
       </div>
 
       {/* Navigation */}
